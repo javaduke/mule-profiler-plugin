@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.mulesoft.muleesb</groupId>
+    <artifactId>mule-profiler</artifactId>
+    <version>3.7.3</version>
+    <packaging>pom</packaging>
+
+    <properties>
+        <mule.version>3.7.3</mule.version>
+        <junit.version>4.9</junit.version>
+        <mockito.version>1.9.0</mockito.version>
+        <mmcVersion>3.3.2</mmcVersion>
+    </properties>
+
+    <modules>
+        <module>mule-profiler-runtime</module>
+    </modules>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <artifactId>maven-release-plugin</artifactId>
+                    <version>2.3.2</version>
+                    <configuration>
+                        <arguments>-Prelease,deploy</arguments>
+                        <goals>deploy</goals>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+
+        <plugins>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.3</version>
+                <configuration>
+                    <source>7</source>
+                    <target>7</target>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+    <repositories>
+        <repository>
+            <id>mule-ee-private</id>
+            <name>Nexus private</name>
+            <layout>default</layout>
+            <url>http://repository-master.mulesoft.org/nexus/content/repositories/private/</url>
+        </repository>
+        <repository>
+            <id>nexus.repository</id>
+            <name>Nexus Repository</name>
+            <layout>default</layout>
+            <url>http://repository-master.mulesoft.org/nexus/content/repositories/releases/</url>
+        </repository>
+        <repository>
+            <id>nexus.snapshots.repository</id>
+            <name>Nexus Snapshots Repository</name>
+            <layout>default</layout>
+            <url>http://repository-master.mulesoft.org/nexus/content/repositories/snapshots/</url>
+        </repository>
+            <repository>
+            <id>mule-ee-customer-releases</id>
+            <name>Nexus Customer Repository</name>
+            <layout>default</layout>
+            <url>https://repository-master.mulesoft.org/nexus/content/repositories/releases-ee</url>
+        </repository>
+    </repositories>
+
+    <distributionManagement>
+        <repository>
+            <id>mule-ee-releases</id>
+            <name>MuleEE Releases Repository</name>
+            <url>https://repository-master.mulesoft.org/nexus/content/repositories/ci-releases/</url>
+        </repository>
+        <snapshotRepository>
+            <id>mule-ee-snapshots</id>
+            <name>MuleEE Snapshots Repository</name>
+            <url>https://repository-master.mulesoft.org/nexus/content/repositories/ci-snapshots/</url>
+            <uniqueVersion>false</uniqueVersion>
+        </snapshotRepository>
+    </distributionManagement>
+
+    <pluginRepositories>
+        <pluginRepository>
+            <id>mule-ee-releases</id>
+            <url>http://repository-master.mulesoft.org/nexus/content/repositories/ci-releases/</url>
+        </pluginRepository>
+        <pluginRepository>
+            <id>mule-ee-snapshots</id>
+            <url>http://repository-master.mulesoft.org/nexus/content/repositories/ci-snapshots/</url>
+        </pluginRepository>
+    </pluginRepositories>
+
+    <scm>
+        <connection>scm:git:git://github.com:mulesoft/mule-remote-debugger.git</connection>
+        <developerConnection>scm:git:git@github.com:mulesoft/mule-remote-debugger.git</developerConnection>
+        <url>http://github.com/mulesoft/mule-remote-debugger</url>
+        <tag>3.8.3</tag>
+    </scm>
+
+</project>
