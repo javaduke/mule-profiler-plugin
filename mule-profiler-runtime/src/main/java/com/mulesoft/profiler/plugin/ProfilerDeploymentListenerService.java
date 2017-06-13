@@ -38,10 +38,10 @@ public class ProfilerDeploymentListenerService extends AbstractDeploymentListene
   @Override
   public void onMuleContextInitialised(String appName, MuleContext muleContext) {
     String property = System.getProperty("com.mulesoft.profiler.apps");
-    if (StringUtils.isBlank(property) || Arrays.asList(property.split(",")).contains(appName)) {y
+    if (StringUtils.isBlank(property) || Arrays.asList(property.split(",")).contains(appName)) {
       System.out.println("[PROFILER] Start Profiling " + appName);
       startProfiling(appName, muleContext);
-    }else{
+    } else {
       System.out.println("[PROFILER] Ignoring Profiling " + appName);
     }
   }
@@ -53,7 +53,7 @@ public class ProfilerDeploymentListenerService extends AbstractDeploymentListene
   private void stopProfiling(String appName) {
 
     MuleAppProfiler muleAppProfiler = handlersByAppName.get(appName);
-    if(muleAppProfiler != null){
+    if (muleAppProfiler != null) {
       muleAppProfiler.stop();
     }
   }

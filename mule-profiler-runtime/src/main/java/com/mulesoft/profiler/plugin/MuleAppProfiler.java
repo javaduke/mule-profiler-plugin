@@ -11,9 +11,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lmax.disruptor.EventHandler;
 import com.lmax.disruptor.EventTranslator;
 import com.lmax.disruptor.RingBuffer;
-import com.lmax.disruptor.WaitStrategy;
 import com.lmax.disruptor.dsl.Disruptor;
-import com.lmax.disruptor.dsl.ProducerType;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.Appender;
 import org.apache.logging.log4j.core.Layout;
@@ -26,7 +24,6 @@ import org.apache.logging.log4j.core.appender.rolling.TimeBasedTriggeringPolicy;
 import org.apache.logging.log4j.core.config.AppenderRef;
 import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.LoggerConfig;
-import org.apache.logging.log4j.core.layout.PatternLayout;
 import org.mule.api.MuleContext;
 import org.mule.api.context.notification.MessageProcessorNotificationListener;
 import org.mule.api.context.notification.ServerNotification;
@@ -39,7 +36,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.Serializable;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -130,10 +126,10 @@ public class MuleAppProfiler {
     }
     registerNotificationType(notificationManager, MessageProcessorNotificationListener.class, MessageProcessorNotification.class);
     //Init listeners
-    DebuggerMessageProcessorNotificationListener debuggerMessageProcessorNotificationListener = new DebuggerMessageProcessorNotificationListener();
+    ProfilerMessageProcessorNotificationListener profillerMessageProcessorNotificationListener = new ProfilerMessageProcessorNotificationListener();
     //register listeners
     try {
-      muleContext.registerListener(debuggerMessageProcessorNotificationListener);
+      muleContext.registerListener(profillerMessageProcessorNotificationListener);
     } catch (NotificationException e) {
       e.printStackTrace();
     }
@@ -176,9 +172,9 @@ public class MuleAppProfiler {
     disruptor.shutdown();
   }
 
-  private class DebuggerMessageProcessorNotificationListener implements MessageProcessorNotificationListener<MessageProcessorNotification> {
+  private class ProfilerMessageProcessorNotificationListener implements MessageProcessorNotificationListener<MessageProcessorNotification> {
 
-    private DebuggerMessageProcessorNotificationListener() {
+    private ProfilerMessageProcessorNotificationListener() {
     }
 
     public void onNotification(MessageProcessorNotification notification) {
@@ -201,6 +197,8 @@ public class MuleAppProfiler {
   public class ProfilerEventHandler implements EventHandler<ProfilerEvent> {
 
     final Map<String, ProfilerEvent> currentEvent = new HashMap<>();
+    final Map<String, MetricsEventData> metrics = new HashMap<>();
+    long lastMetricDump = System.currentTimeMillis();
 
     public void onEvent(ProfilerEvent event, long sequence, boolean endOfBatch) {
       if (event.get() == null) {
@@ -222,6 +220,25 @@ public class MuleAppProfiler {
               internalLogger.log(Level.INFO, message);
             } catch (JsonProcessingException e) {
               LOGGER.error("There was an error logging the object.", e);
+            }
+            if (Boolean.getBoolean("com.mulesoft.profiler.metrics.enabled")) {
+              MetricsEventData metricsEventData = metrics.get(event.get().getPath());
+              if (metricsEventData == null) {
+                metricsEventData = new MetricsEventData(event.get().getPath());
+                metrics.put(metricsEventData.getPath(), metricsEventData);
+              }
+              metricsEventData.hit();
+              metricsEventData.consumed(takenTime);
+              if ((System.currentTimeMillis() - lastMetricDump) > Long.getLong("com.mulesoft.profiler.metrics.interval", 1000)) {
+                lastMetricDump = System.currentTimeMillis();
+                String metric;
+                try {
+                  metric = objectMapper.writeValueAsString(metrics.values());
+                  internalLogger.log(Level.INFO, metric);
+                } catch (JsonProcessingException e) {
+                  LOGGER.error("There was an error logging the object.", e);
+                }
+              }
             }
           }
           currentEvent.remove(event.get().getEventId());

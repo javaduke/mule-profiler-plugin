@@ -16,6 +16,7 @@ public class AlertEventData implements Serializable {
   private Long duration;
   private String path;
   private String appName;
+  private String type = "Alert";
 
   public AlertEventData(Long startTime, Long endTime, Long duration, String path, String appName) {
     this.startTime = startTime;
