@@ -3,9 +3,10 @@
 This plugins monitors/profile the execution of a flow. It allows to generate alerts when it throughput is bigger than a threshold and also dump some execution metrics.
 The user can filter what app and also what MP wants to be monitored
 
-## Problems
+The profiler info is being dropped inside the logs folder
 
-If too many events are being dropped try increasing the ringbuffersize or try to filter the mp that are more interested.
+* profiler_metrics.json
+* profiler_event.log
 
 ## Configuration properties
  
@@ -20,3 +21,11 @@ If too many events are being dropped try increasing the ringbuffersize or try to
   | -M-Dcom.mulesoft.profiler.metrics.enabled | false | Enables metrics on the plugin. Collects total time and hit count of each MP |
   | -M-Dcom.mulesoft.profiler.metrics.interval | 1000 | Metrics dump interval |
   | -M-Dcom.mulesoft.profiler.ringbuffersize | 4096 | The size of the buffer of the events that needs to be dispatched to the profiler.  |
+  
+## Instalation
+
+Just download the zip from the releases and drop it into the plugins directory
+
+## Problems
+
+If too many events are being dropped try increasing the ringbuffersize or try to filter the mp that are more interested.
