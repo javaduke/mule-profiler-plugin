@@ -42,14 +42,12 @@ public class Log4JDataHandlerImpl implements AlertDataHandler, MetricsDataHandle
   private String loggerName = className + "." + "logger";
   private String appenderName = className + "." + "appender";
   private String contextName = className + "." + "context";
-  private String appName;
   private ObjectMapper objectMapper;
   public int daysTrigger = 1;
   public int mbTrigger = 100;
   private org.apache.logging.log4j.core.Logger internalLogger;
 
-  public Log4JDataHandlerImpl(String appName) {
-    this.appName = appName;
+  public Log4JDataHandlerImpl() {
     initializeLog();
   }
 

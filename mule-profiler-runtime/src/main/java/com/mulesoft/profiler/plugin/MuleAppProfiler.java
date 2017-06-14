@@ -6,13 +6,11 @@
  */
 package com.mulesoft.profiler.plugin;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.lmax.disruptor.EventHandler;
 import com.lmax.disruptor.EventTranslator;
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.dsl.Disruptor;
 import com.mulesoft.profiler.plugin.utils.ListStatistics;
-import org.apache.logging.log4j.Level;
 import org.mule.api.AnnotatedObject;
 import org.mule.api.MuleContext;
 import org.mule.api.context.notification.MessageProcessorNotificationListener;
@@ -51,7 +49,7 @@ public class MuleAppProfiler {
     this.appName = appName;
     initDisruptor();
     registerNotifications(muleContext);
-    Log4JDataHandlerImpl log4JDataHandler = new Log4JDataHandlerImpl(appName);
+    Log4JDataHandlerImpl log4JDataHandler = new Log4JDataHandlerImpl();
     this.alertDataHandler = log4JDataHandler;
     this.metricsDataHandler = log4JDataHandler;
   }
