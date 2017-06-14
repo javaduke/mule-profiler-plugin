@@ -19,6 +19,7 @@ import org.mule.api.context.notification.ServerNotificationListener;
 import org.mule.context.notification.MessageProcessorNotification;
 import org.mule.context.notification.NotificationException;
 import org.mule.context.notification.ServerNotificationManager;
+import org.mule.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,6 +30,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+
+import static java.util.Arrays.asList;
 
 
 public class MuleAppProfiler {
@@ -110,31 +113,36 @@ public class MuleAppProfiler {
 
   private class ProfilerMessageProcessorNotificationListener implements MessageProcessorNotificationListener<MessageProcessorNotification> {
 
+    String validMessageProcessors = System.getProperty("com.mulesoft.profiler.mps");
+
     private ProfilerMessageProcessorNotificationListener() {
     }
 
     public void onNotification(MessageProcessorNotification notification) {
-      final ProfilerEventData profilerEventData = new ProfilerEventData();
-      profilerEventData.setPath(notification.getProcessorPath());
-      profilerEventData.setEventType(notification.getType());
-      profilerEventData.setAction(notification.getAction());
-      profilerEventData.setAppName(appName);
-      profilerEventData.setEventId(notification.getSource().getId());
-      profilerEventData.setStartTime(notification.getTimestamp());
+      //We filter so that we can monitor specific mps
+      if (StringUtils.isBlank(validMessageProcessors) || asList(validMessageProcessors.split(",")).contains(notification.getProcessorPath())) {
+        final ProfilerEventData profilerEventData = new ProfilerEventData();
+        profilerEventData.setPath(notification.getProcessorPath());
+        profilerEventData.setEventType(notification.getType());
+        profilerEventData.setAction(notification.getAction());
+        profilerEventData.setAppName(appName);
+        profilerEventData.setEventId(notification.getSource().getId());
+        profilerEventData.setStartTime(notification.getTimestamp());
 
-      if (notification.getProcessor() instanceof AnnotatedObject) {
-        final Collection<Object> values = ((AnnotatedObject) notification.getProcessor()).getAnnotations().values();
-        if (values.isEmpty()) {
-          profilerEventData.setDocName(String.valueOf(values.iterator().next()));
+        if (notification.getProcessor() instanceof AnnotatedObject) {
+          final Collection<Object> values = ((AnnotatedObject) notification.getProcessor()).getAnnotations().values();
+          if (values.isEmpty()) {
+            profilerEventData.setDocName(String.valueOf(values.iterator().next()));
+          }
         }
+
+        ringBuffer.publishEvent(new EventTranslator<ProfilerEvent>() {
+          @Override
+          public void translateTo(ProfilerEvent profilerEvent, long l) {
+            profilerEvent.set(profilerEventData);
+          }
+        });
       }
-
-      ringBuffer.publishEvent(new EventTranslator<ProfilerEvent>() {
-        @Override
-        public void translateTo(ProfilerEvent profilerEvent, long l) {
-          profilerEvent.set(profilerEventData);
-        }
-      });
     }
   }
 
