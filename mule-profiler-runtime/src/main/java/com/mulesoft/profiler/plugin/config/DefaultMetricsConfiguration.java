@@ -4,12 +4,14 @@
  * (or other master license agreement) separately entered into in writing between you and
  * MuleSoft. If such an agreement is not in place, you may not use the software.
  */
-package com.mulesoft.profiler.plugin;
+package com.mulesoft.profiler.plugin.config;
 
 
-public interface AlertDataHandler {
+public class DefaultMetricsConfiguration implements MetricsConfiguration {
 
-  void close();
+  @Override
+  public long interval() {
+    return Long.getLong("com.mulesoft.profiler.metrics.interval", 1000);
+  }
 
-  void handle(AlertEventData data);
 }

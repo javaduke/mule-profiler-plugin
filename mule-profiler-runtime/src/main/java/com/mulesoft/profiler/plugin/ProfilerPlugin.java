@@ -9,6 +9,8 @@ package com.mulesoft.profiler.plugin;
 
 import com.mulesoft.mule.plugin.MulePlugin;
 import com.mulesoft.mule.plugin.processor.deployment.DeploymentListenerProvider;
+import com.mulesoft.profiler.plugin.config.DefaultProfilerConfiguration;
+import com.mulesoft.profiler.plugin.config.ProfilerConfiguration;
 import org.mule.api.MuleException;
 import org.mule.api.lifecycle.InitialisationException;
 import org.mule.module.launcher.DeploymentListener;
@@ -18,15 +20,17 @@ import java.io.File;
 public class ProfilerPlugin implements MulePlugin, DeploymentListenerProvider {
 
   private ProfilerDeploymentListenerService profilerDeploymentListenerService;
+  private File workingDirectory;
+  private ProfilerConfiguration configuration;
 
   @Override
-  public void setWorkingDirectory(File file) {
-
+  public void setWorkingDirectory(File workingDirectory) {
+    this.workingDirectory = workingDirectory;
   }
 
   @Override
   public boolean isDisabledOnEnvironment() {
-    return !Boolean.getBoolean("com.mulesoft.profiler.enabled");
+    return !configuration.isEnabled();
   }
 
   @Override
@@ -41,7 +45,10 @@ public class ProfilerPlugin implements MulePlugin, DeploymentListenerProvider {
 
   @Override
   public void initialise() throws InitialisationException {
-    profilerDeploymentListenerService = new ProfilerDeploymentListenerService();
+    //TODO load configuration from a config metricsFile in the /conf directory
+
+    configuration = new DefaultProfilerConfiguration();
+    profilerDeploymentListenerService = new ProfilerDeploymentListenerService(configuration);
   }
 
   @Override

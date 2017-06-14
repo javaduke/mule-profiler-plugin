@@ -11,5 +11,7 @@ import java.util.ArrayList;
 
 public interface MetricsDataHandler {
 
+  void close();
+
   void handle(ArrayList<MetricsEventData> data);
 }

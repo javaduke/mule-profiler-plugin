@@ -4,12 +4,19 @@
  * (or other master license agreement) separately entered into in writing between you and
  * MuleSoft. If such an agreement is not in place, you may not use the software.
  */
-package com.mulesoft.profiler.plugin;
+package com.mulesoft.profiler.plugin.config;
+
+import org.mule.api.MuleContext;
+
+import java.util.List;
 
 
-public interface AlertDataHandler {
+public interface ProfilerConfiguration {
+  boolean isEnabled();
 
-  void close();
+  boolean profileAllApps();
 
-  void handle(AlertEventData data);
+  List<String> getAppsToProfile();
+
+  AppProfilingConfiguration getAppProfiler(String appName, MuleContext context);
 }

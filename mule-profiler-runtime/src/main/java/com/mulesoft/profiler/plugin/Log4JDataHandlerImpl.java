@@ -26,13 +26,12 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.zip.Deflater;
 
 import static org.apache.logging.log4j.core.layout.PatternLayout.createLayout;
 
-public class Log4JDataHandlerImpl implements AlertDataHandler, MetricsDataHandler {
+public class Log4JDataHandlerImpl implements AlertDataHandler {
 
   private final static Logger LOGGER = LoggerFactory.getLogger(Log4JDataHandlerImpl.class);
 
@@ -66,7 +65,7 @@ public class Log4JDataHandlerImpl implements AlertDataHandler, MetricsDataHandle
     final String fileName = getLogFileName();
     final String filePattern = getFilePattern();
     final Appender appender = RollingRandomAccessFileAppender.createAppender(fileName, filePattern, "true",
-            this.appenderName, "true", "",
+            this.appenderName, "false", "",
             policy, strategy, layout, null, "false", null, null, logConfiguration);
     appender.start();
     final AppenderRef[] ref = new AppenderRef[]{};
@@ -87,6 +86,11 @@ public class Log4JDataHandlerImpl implements AlertDataHandler, MetricsDataHandle
   }
 
   @Override
+  public void close() {
+
+  }
+
+  @Override
   public void handle(AlertEventData data) {
     String message;
     try {
@@ -97,14 +101,4 @@ public class Log4JDataHandlerImpl implements AlertDataHandler, MetricsDataHandle
     }
   }
 
-  @Override
-  public void handle(ArrayList<MetricsEventData> data) {
-    String message;
-    try {
-      message = objectMapper.writeValueAsString(data);
-      internalLogger.log(Level.INFO, message);
-    } catch (JsonProcessingException e) {
-      LOGGER.error("Error while writing json", e);
-    }
-  }
 }

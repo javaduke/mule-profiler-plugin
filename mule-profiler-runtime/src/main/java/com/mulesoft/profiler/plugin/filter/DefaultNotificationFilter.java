@@ -4,12 +4,14 @@
  * (or other master license agreement) separately entered into in writing between you and
  * MuleSoft. If such an agreement is not in place, you may not use the software.
  */
-package com.mulesoft.profiler.plugin;
+package com.mulesoft.profiler.plugin.filter;
+
+import org.mule.context.notification.MessageProcessorNotification;
 
 
-public interface AlertDataHandler {
-
-  void close();
-
-  void handle(AlertEventData data);
+public class DefaultNotificationFilter implements NotificationFilter {
+  @Override
+  public boolean acceptsNotifications(MessageProcessorNotification notification) {
+    return true;
+  }
 }

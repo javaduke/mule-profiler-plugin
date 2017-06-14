@@ -10,6 +10,8 @@ import com.lmax.disruptor.EventHandler;
 import com.lmax.disruptor.EventTranslator;
 import com.lmax.disruptor.RingBuffer;
 import com.lmax.disruptor.dsl.Disruptor;
+import com.mulesoft.profiler.plugin.config.AppProfilingConfiguration;
+import com.mulesoft.profiler.plugin.filter.NotificationFilter;
 import com.mulesoft.profiler.plugin.utils.ListStatistics;
 import org.mule.api.AnnotatedObject;
 import org.mule.api.MuleContext;
@@ -19,7 +21,6 @@ import org.mule.api.context.notification.ServerNotificationListener;
 import org.mule.context.notification.MessageProcessorNotification;
 import org.mule.context.notification.NotificationException;
 import org.mule.context.notification.ServerNotificationManager;
-import org.mule.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,11 +28,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-
-import static java.util.Arrays.asList;
 
 
 public class MuleAppProfiler {
@@ -42,19 +42,27 @@ public class MuleAppProfiler {
   private RingBuffer<ProfilerEvent> ringBuffer;
   private Disruptor<ProfilerEvent> disruptor;
 
+  private MuleContext muleContext;
   private String appName;
+  private AppProfilingConfiguration configuration;
 
   private AlertDataHandler alertDataHandler;
   private MetricsDataHandler metricsDataHandler;
+  private ProfilerMessageProcessorNotificationListener profilerNotificationListener;
 
 
-  public MuleAppProfiler(MuleContext muleContext, String appName) {
+  public MuleAppProfiler(MuleContext muleContext, String appName, AppProfilingConfiguration configuration) {
+    this.muleContext = muleContext;
     this.appName = appName;
+    this.configuration = configuration;
+    initDataHandlers();
     initDisruptor();
     registerNotifications(muleContext);
-    Log4JDataHandlerImpl log4JDataHandler = new Log4JDataHandlerImpl();
-    this.alertDataHandler = log4JDataHandler;
-    this.metricsDataHandler = log4JDataHandler;
+  }
+
+  private void initDataHandlers() {
+    this.alertDataHandler = new Log4JDataHandlerImpl();
+    this.metricsDataHandler = new DefaultMetricsDataHandler();
   }
 
 
@@ -65,10 +73,10 @@ public class MuleAppProfiler {
     }
     registerNotificationType(notificationManager, MessageProcessorNotificationListener.class, MessageProcessorNotification.class);
     //Init listeners
-    ProfilerMessageProcessorNotificationListener profillerMessageProcessorNotificationListener = new ProfilerMessageProcessorNotificationListener();
+    profilerNotificationListener = new ProfilerMessageProcessorNotificationListener();
     //register listeners
     try {
-      muleContext.registerListener(profillerMessageProcessorNotificationListener);
+      muleContext.registerListener(profilerNotificationListener);
     } catch (NotificationException e) {
       e.printStackTrace();
     }
@@ -91,7 +99,7 @@ public class MuleAppProfiler {
     ProfilerEventFactory factory = new ProfilerEventFactory();
 
     // Specify the size of the ring buffer, must be power of 2.
-    int bufferSize = 1024;
+    int bufferSize = configuration.bufferSize();
 
     // Construct the Disruptor
 
@@ -108,19 +116,27 @@ public class MuleAppProfiler {
   }
 
   public void stop() {
+    System.out.println("[PROFILER] Stop profiling " + appName);
+    //stop listening notifications
+    muleContext.unregisterListener(profilerNotificationListener);
+    metricsDataHandler.close();
+    alertDataHandler.close();
     disruptor.shutdown();
   }
 
   private class ProfilerMessageProcessorNotificationListener implements MessageProcessorNotificationListener<MessageProcessorNotification> {
 
-    String validMessageProcessors = System.getProperty("com.mulesoft.profiler.mps");
+
+    private final NotificationFilter notificationFilter;
 
     private ProfilerMessageProcessorNotificationListener() {
+      notificationFilter = configuration.notificationFilter();
     }
 
     public void onNotification(MessageProcessorNotification notification) {
+
       //We filter so that we can monitor specific mps
-      if (StringUtils.isBlank(validMessageProcessors) || asList(validMessageProcessors.split(",")).contains(notification.getProcessorPath())) {
+      if (notificationFilter.acceptsNotifications(notification)) {
         final ProfilerEventData profilerEventData = new ProfilerEventData();
         profilerEventData.setPath(notification.getProcessorPath());
         profilerEventData.setEventType(notification.getType());
@@ -128,29 +144,42 @@ public class MuleAppProfiler {
         profilerEventData.setAppName(appName);
         profilerEventData.setEventId(notification.getSource().getId());
         profilerEventData.setStartTime(notification.getTimestamp());
+        profilerEventData.setClassname(notification.getProcessor().getClass().getName());
 
         if (notification.getProcessor() instanceof AnnotatedObject) {
           final Collection<Object> values = ((AnnotatedObject) notification.getProcessor()).getAnnotations().values();
-          if (values.isEmpty()) {
+          if (!values.isEmpty()) {
             profilerEventData.setDocName(String.valueOf(values.iterator().next()));
           }
         }
 
-        ringBuffer.publishEvent(new EventTranslator<ProfilerEvent>() {
+        boolean tryPublishEvent = ringBuffer.tryPublishEvent(new EventTranslator<ProfilerEvent>() {
           @Override
           public void translateTo(ProfilerEvent profilerEvent, long l) {
             profilerEvent.set(profilerEventData);
           }
         });
+        if (!tryPublishEvent) {
+          if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("[Profiler] Ignoring events as the ring bugger is full.");
+          }
+        }
       }
     }
+
+
   }
 
   public class ProfilerEventHandler implements EventHandler<ProfilerEvent> {
 
-    final Map<String, ProfilerEvent> currentEvent = new HashMap<>();
-    final Map<String, ListStatistics> metrics = new HashMap<>();
-    long lastMetricDump = System.currentTimeMillis();
+    private final Map<String, ProfilerEvent> currentEvent = new HashMap<>();
+    private final Map<String, ListStatistics> metrics = new HashMap<>();
+    private final long threshold;
+    private long lastMetricDump = System.currentTimeMillis();
+
+    public ProfilerEventHandler() {
+      threshold = configuration.samplerConfiguration().threshold();
+    }
 
     public void onEvent(ProfilerEvent event, long sequence, boolean endOfBatch) {
       if (event.get() == null) {
@@ -160,26 +189,26 @@ public class MuleAppProfiler {
         currentEvent.put(event.get().getEventId(), event);
       } else if (event.get().getAction() == MessageProcessorNotification.MESSAGE_PROCESSOR_POST_INVOKE) {
         ProfilerEvent profilerEvent = currentEvent.get(event.get().getEventId());
-        if (profilerEvent != null) {
+        if (profilerEvent != null && event.get().getPath().equals(profilerEvent.get().getPath())) {
           ProfilerEventData current = event.get();
           ProfilerEventData previous = profilerEvent.get();
-          long takenTime = current.getTime() - previous.getTime();
+          long takenTime = current.getStartTime() - previous.getStartTime();
 
-          if (Boolean.getBoolean("com.mulesoft.profiler.alerts.disabled")) {
-            if (takenTime > Long.getLong("com.mulesoft.profiler.threshold", 1000)) {
-              final AlertEventData alertEventData = new AlertEventData(previous.getTime(), current.getTime(), current.getTime() - previous.getTime(), current.getPath(), current.getAppName(), current.getDocName());
+          if (configuration.enableSampler()) {
+            if (takenTime > threshold) {
+              final AlertEventData alertEventData = new AlertEventData(previous.getStartTime(), current.getStartTime(), current.getStartTime() - previous.getStartTime(), current.getPath(), current.getAppName(), current.getDocName(), current.getClassname());
               alertDataHandler.handle(alertEventData);
             }
           }
 
-          if (Boolean.getBoolean("com.mulesoft.profiler.metrics.enabled")) {
+          if (configuration.enableMetrics()) {
             ListStatistics metricsEventData = metrics.get(event.get().getPath());
             if (metricsEventData == null) {
               metricsEventData = new ListStatistics();
               metrics.put(event.get().getPath(), metricsEventData);
             }
             metricsEventData.addValue(takenTime);
-            if ((System.currentTimeMillis() - lastMetricDump) > Long.getLong("com.mulesoft.profiler.metrics.interval", 1000)) {
+            if ((System.currentTimeMillis() - lastMetricDump) > configuration.metricsConfiguration().interval()) {
               lastMetricDump = System.currentTimeMillis();
               Set<Map.Entry<String, ListStatistics>> values = metrics.entrySet();
               ArrayList<MetricsEventData> eventData = new ArrayList<>();

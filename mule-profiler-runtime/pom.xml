@@ -9,14 +9,12 @@
     <parent>
         <groupId>com.mulesoft.muleesb</groupId>
         <artifactId>mule-profiler</artifactId>
-        <version>3.7.3</version>
+        <version>1.0.0-SNAPSHOT</version>
     </parent>
 
     <properties>
         <junit.version>4.12</junit.version>
         <mockito.version>1.9.0</mockito.version>
-        <mmcVersion>3.3.2</mmcVersion>
-        <xstreamVersion>1.4.9</xstreamVersion>
         <licensePath>LICENSE_HEADER.txt</licensePath>
     </properties>
 

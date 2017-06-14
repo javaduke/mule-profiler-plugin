@@ -6,12 +6,14 @@
  */
 package com.mulesoft.profiler.plugin;
 
+import com.mulesoft.profiler.plugin.config.ProfilerConfiguration;
 import org.mule.api.MuleContext;
 import org.mule.module.launcher.AbstractDeploymentListener;
 import org.mule.util.StringUtils;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -19,10 +21,17 @@ import java.util.Map;
  */
 public class ProfilerDeploymentListenerService extends AbstractDeploymentListener {
 
+  private final List<String> appsToProfile;
   private Map<String, MuleAppProfiler> handlersByAppName;
+  private ProfilerConfiguration configuration;
+  private final boolean profileAllApps;
 
-  public ProfilerDeploymentListenerService() {
+
+  public ProfilerDeploymentListenerService(ProfilerConfiguration configuration) {
+    this.configuration = configuration;
     this.handlersByAppName = new HashMap<>();
+    this.appsToProfile = configuration.getAppsToProfile();
+    this.profileAllApps = configuration.profileAllApps();
   }
 
   @Override
@@ -37,8 +46,8 @@ public class ProfilerDeploymentListenerService extends AbstractDeploymentListene
 
   @Override
   public void onMuleContextInitialised(String appName, MuleContext muleContext) {
-    String property = System.getProperty("com.mulesoft.profiler.apps");
-    if (StringUtils.isBlank(property) || Arrays.asList(property.split(",")).contains(appName)) {
+
+    if (profileAllApps || appsToProfile.contains(appName)) {
       System.out.println("[PROFILER] Start Profiling " + appName);
       startProfiling(appName, muleContext);
     } else {
@@ -47,7 +56,7 @@ public class ProfilerDeploymentListenerService extends AbstractDeploymentListene
   }
 
   private void startProfiling(String appName, MuleContext muleContext) {
-    handlersByAppName.put(appName, new MuleAppProfiler(muleContext, appName));
+    handlersByAppName.put(appName, new MuleAppProfiler(muleContext, appName, configuration.getAppProfiler(appName, muleContext)));
   }
 
   private void stopProfiling(String appName) {

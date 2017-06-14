@@ -18,7 +18,15 @@ public class ProfilerEventData implements Serializable{
   private String eventId;
   private int action;
   private String docName;
+  private String classname;
 
+  public String getClassname() {
+    return classname;
+  }
+
+  public void setClassname(String classname) {
+    this.classname = classname;
+  }
 
   public String getEventId() {
     return eventId;
@@ -39,7 +47,7 @@ public class ProfilerEventData implements Serializable{
   public ProfilerEventData() {
   }
 
-  public Long getTime() {
+  public Long getStartTime() {
     return startTime;
   }
 

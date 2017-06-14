@@ -4,12 +4,9 @@
  * (or other master license agreement) separately entered into in writing between you and
  * MuleSoft. If such an agreement is not in place, you may not use the software.
  */
-package com.mulesoft.profiler.plugin;
+package com.mulesoft.profiler.plugin.config;
 
 
-public interface AlertDataHandler {
-
-  void close();
-
-  void handle(AlertEventData data);
+public interface MetricsConfiguration {
+  long interval();
 }
