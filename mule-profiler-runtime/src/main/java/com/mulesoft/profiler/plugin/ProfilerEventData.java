@@ -17,6 +17,7 @@ public class ProfilerEventData implements Serializable{
   private String eventType;
   private String eventId;
   private int action;
+  private String docName;
 
 
   public String getEventId() {
@@ -81,5 +82,13 @@ public class ProfilerEventData implements Serializable{
             ", eventId='" + eventId + '\'' +
             ", action=" + action +
             '}';
+  }
+
+  public void setDocName(String docName) {
+    this.docName = docName;
+  }
+
+  public String getDocName() {
+    return docName;
   }
 }

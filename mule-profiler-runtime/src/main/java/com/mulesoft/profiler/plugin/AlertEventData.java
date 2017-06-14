@@ -16,16 +16,21 @@ public class AlertEventData implements Serializable {
   private Long duration;
   private String path;
   private String appName;
+  private String docName;
   private String type = "Alert";
 
-  public AlertEventData(Long startTime, Long endTime, Long duration, String path, String appName) {
+  public AlertEventData(Long startTime, Long endTime, Long duration, String path, String appName, String docName) {
     this.startTime = startTime;
     this.endTime = endTime;
     this.duration = duration;
     this.path = path;
     this.appName = appName;
+    this.docName = docName;
   }
 
+  public String getDocName() {
+    return docName;
+  }
 
   public Long getStartTime() {
     return startTime;
@@ -35,41 +40,19 @@ public class AlertEventData implements Serializable {
     return endTime;
   }
 
-  public void setEndTime(Long endTime) {
-    this.endTime = endTime;
-  }
-
   public Long getDuration() {
     return duration;
-  }
-
-  public void setDuration(Long duration) {
-    this.duration = duration;
-  }
-
-  public Long getTime() {
-    return startTime;
-  }
-
-  public void setStartTime(Long startTime) {
-    this.startTime = startTime;
   }
 
   public String getPath() {
     return path;
   }
 
-  public void setPath(String path) {
-    this.path = path;
-  }
-
   public String getAppName() {
     return appName;
   }
 
-  public void setAppName(String appName) {
-    this.appName = appName;
+  public String getType() {
+    return type;
   }
-
-
 }

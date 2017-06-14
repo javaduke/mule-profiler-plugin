@@ -7,34 +7,67 @@
 package com.mulesoft.profiler.plugin;
 
 
+import com.mulesoft.profiler.plugin.utils.ListStatistics;
+
+import java.util.HashMap;
+import java.util.Map;
+
 public class MetricsEventData {
 
   private String path;
-  private long enlapsedTime = 0;
-  private long counts = 0;
   private String type = "Metric";
+  private ListStatistics listStatistics;
 
-  public MetricsEventData(String path) {
+
+  public MetricsEventData(String path, ListStatistics listStatistics) {
     this.path = path;
+    this.listStatistics = listStatistics;
   }
 
   public String getPath() {
     return path;
   }
 
-  public long getEnlapsedTime() {
-    return enlapsedTime;
+  public String getType() {
+    return type;
   }
 
-  public long getCounts() {
-    return counts;
+  public long getN() {
+    return listStatistics.getN();
   }
 
-  public void consumed(long enlapsedTime) {
-    this.enlapsedTime = this.enlapsedTime + enlapsedTime;
+  public double getMin() {
+    return listStatistics.getMin();
   }
 
-  public void hit() {
-    this.counts = counts + 1;
+  public double getMax() {
+    return listStatistics.getMax();
+  }
+
+  public double getMean() {
+    return listStatistics.getMean();
+  }
+
+  public double getSume() {
+    return listStatistics.getSum();
+  }
+
+  public double getStdDesviation() {
+    return listStatistics.getStandardDeviation();
+  }
+
+  public double getVariance() {
+    return listStatistics.getVariance();
+  }
+
+  public Map<String, Double> getDistribution() {
+    HashMap<String, Double> result = new HashMap<>();
+    result.put("100", listStatistics.getPercentile(100));
+    result.put("80", listStatistics.getPercentile(80));
+    result.put("60", listStatistics.getPercentile(60));
+    result.put("40", listStatistics.getPercentile(20));
+    result.put("20", listStatistics.getPercentile(10));
+    result.put("0", listStatistics.getPercentile(0));
+    return result;
   }
 }
