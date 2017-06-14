@@ -156,27 +156,32 @@ public class MuleAppProfiler {
           ProfilerEventData current = event.get();
           ProfilerEventData previous = profilerEvent.get();
           long takenTime = current.getTime() - previous.getTime();
-          if (takenTime > Long.getLong("com.mulesoft.profiler.threshold", 1000)) {
-            final AlertEventData alertEventData = new AlertEventData(previous.getTime(), current.getTime(), current.getTime() - previous.getTime(), current.getPath(), current.getAppName(), current.getDocName());
-            alertDataHandler.handle(alertEventData);
-            if (Boolean.getBoolean("com.mulesoft.profiler.metrics.enabled")) {
-              ListStatistics metricsEventData = metrics.get(event.get().getPath());
-              if (metricsEventData == null) {
-                metricsEventData = new ListStatistics();
-                metrics.put(event.get().getPath(), metricsEventData);
-              }
-              metricsEventData.addValue(takenTime);
-              if ((System.currentTimeMillis() - lastMetricDump) > Long.getLong("com.mulesoft.profiler.metrics.interval", 1000)) {
-                lastMetricDump = System.currentTimeMillis();
-                Set<Map.Entry<String, ListStatistics>> values = metrics.entrySet();
-                ArrayList<MetricsEventData> eventData = new ArrayList<>();
-                for (Map.Entry<String, ListStatistics> value : values) {
-                  eventData.add(new MetricsEventData(value.getKey(), value.getValue()));
-                }
-                metricsDataHandler.handle(eventData);
-              }
+
+          if (Boolean.getBoolean("com.mulesoft.profiler.alerts.disabled")) {
+            if (takenTime > Long.getLong("com.mulesoft.profiler.threshold", 1000)) {
+              final AlertEventData alertEventData = new AlertEventData(previous.getTime(), current.getTime(), current.getTime() - previous.getTime(), current.getPath(), current.getAppName(), current.getDocName());
+              alertDataHandler.handle(alertEventData);
             }
           }
+
+          if (Boolean.getBoolean("com.mulesoft.profiler.metrics.enabled")) {
+            ListStatistics metricsEventData = metrics.get(event.get().getPath());
+            if (metricsEventData == null) {
+              metricsEventData = new ListStatistics();
+              metrics.put(event.get().getPath(), metricsEventData);
+            }
+            metricsEventData.addValue(takenTime);
+            if ((System.currentTimeMillis() - lastMetricDump) > Long.getLong("com.mulesoft.profiler.metrics.interval", 1000)) {
+              lastMetricDump = System.currentTimeMillis();
+              Set<Map.Entry<String, ListStatistics>> values = metrics.entrySet();
+              ArrayList<MetricsEventData> eventData = new ArrayList<>();
+              for (Map.Entry<String, ListStatistics> value : values) {
+                eventData.add(new MetricsEventData(value.getKey(), value.getValue()));
+              }
+              metricsDataHandler.handle(eventData);
+            }
+          }
+
           currentEvent.remove(event.get().getEventId());
         }
       }
