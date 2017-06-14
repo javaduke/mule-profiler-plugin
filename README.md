@@ -1,6 +1,7 @@
 # MuleProfiler
 
-This plugin will dump the message processors info that takes more time than a specified threshold
+This plugins monitors/profile the execution of a flow. It allows to generate alerts when it throughput is bigger than a threshold and also dump some execution metrics.
+The user can filter what app and also what MP wants to be monitored
 
 ## Configuration properties
  
