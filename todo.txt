@@ -1,0 +1,15 @@
+1. Configuration YAML file - just like the runtime agent
+2. REST API
+3. Metrics and data exposed by the profiler:
+
+       * Basic profiler functionality - memory, CPU, advice GC
+       * List of apps, list of flows per app
+       * List of thread pools, their relationship to the flow (i.e. which flows use which thread pools),
+         total threads, allocated threads, pool exhausted action
+       * Number of threads - total / per app / per flow / per SEDA queue
+       * Time the thread spends in flow / message processor - max/min/average/spread
+       * Object stores and number of objects (low priority)
+       * Response time (for sync flows) or processing time (for async flows) - max/min/average/spread
+
+4. IntelliJ plugin
+
